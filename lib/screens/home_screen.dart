@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'dart:ui';
@@ -15,6 +16,7 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   late AnimationController _backgroundController;
   late AnimationController _pulseController;
+  late AnimationController _shimmerController;
 
   @override
   void initState() {
@@ -28,12 +30,18 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       duration: Duration(seconds: 2),
       vsync: this,
     )..repeat(reverse: true);
+
+    _shimmerController = AnimationController(
+      duration: Duration(seconds: 3),
+      vsync: this,
+    )..repeat();
   }
 
   @override
   void dispose() {
     _backgroundController.dispose();
     _pulseController.dispose();
+    _shimmerController.dispose();
     super.dispose();
   }
 
@@ -42,7 +50,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     return Scaffold(
       body: Stack(
         children: [
-          // Animated Background with Dynamic Effects
+          // Enhanced Animated Background
           AnimatedBuilder(
             animation: _backgroundController,
             builder: (context, child) {
@@ -56,7 +64,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   ),
                   Positioned.fill(
                     child: BackdropFilter(
-                      filter: ImageFilter.blur(sigmaX: 2, sigmaY: 2),
+                      filter: ImageFilter.blur(sigmaX: 3, sigmaY: 3),
                       child: Container(
                         decoration: BoxDecoration(
                           gradient: LinearGradient(
@@ -78,8 +86,41 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                               Colors.blue.withOpacity(0.3),
                               Colors.black.withOpacity(0.7),
                             ],
+                            stops: [0.0, 0.3, 0.7, 1.0],
                           ),
                         ),
+                      ),
+                    ),
+                  ),
+                  // Particle Effect Overlay
+                  ...List.generate(
+                    20,
+                    (index) => Positioned(
+                      left: math.Random().nextDouble() *
+                          MediaQuery.of(context).size.width,
+                      top: math.Random().nextDouble() *
+                          MediaQuery.of(context).size.height,
+                      child: AnimatedBuilder(
+                        animation: _shimmerController,
+                        builder: (context, child) {
+                          final offset =
+                              (_shimmerController.value + index / 20) % 1.0;
+                          return Transform.translate(
+                            offset: Offset(
+                              math.sin(offset * 2 * math.pi) * 10,
+                              math.cos(offset * 2 * math.pi) * 10,
+                            ),
+                            child: Container(
+                              width: 4,
+                              height: 4,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: Colors.white
+                                    .withOpacity(0.3 * (1 - offset)),
+                              ),
+                            ),
+                          );
+                        },
                       ),
                     ),
                   ),
@@ -88,66 +129,59 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             },
           ),
 
-          // Main Content
+          // Main Content with Enhanced ScrollPhysics
           SafeArea(
             child: CustomScrollView(
+              physics: BouncingScrollPhysics(),
               slivers: [
                 SliverToBoxAdapter(
                   child: Column(
                     children: [
                       SizedBox(height: 30),
 
-                      // Ultra Modern Logo Section
-                      AnimatedBuilder(
-                        animation: _pulseController,
-                        builder: (context, child) {
-                          return Container(
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.green.withOpacity(
-                                      0.3 + _pulseController.value * 0.2),
-                                  blurRadius:
-                                      30 + (_pulseController.value * 20),
-                                  spreadRadius:
-                                      5 + (_pulseController.value * 5),
-                                ),
-                                BoxShadow(
-                                  color: Colors.blue.withOpacity(
-                                      0.2 + _pulseController.value * 0.1),
-                                  blurRadius: 20,
-                                  spreadRadius: 2,
-                                ),
-                              ],
-                            ),
-                            child: Hero(
-                              tag: 'app_logo',
-                              child: ClipOval(
-                                child: BackdropFilter(
-                                  filter:
-                                      ImageFilter.blur(sigmaX: 5, sigmaY: 5),
-                                  child: Container(
-                                    padding: EdgeInsets.all(15),
-                                    decoration: BoxDecoration(
-                                      gradient: LinearGradient(
-                                        colors: [
-                                          Colors.white.withOpacity(0.2),
-                                          Colors.white.withOpacity(0.1),
-                                        ],
-                                      ),
-                                    ),
-                                    child: Image.asset(
-                                      "assets/app_logo.png",
-                                      width: 100,
-                                      height: 100,
-                                    ),
+                      // Enhanced Logo Section with 3D Transform
+                      Transform(
+                        transform: Matrix4.identity()
+                          ..setEntry(3, 2, 0.001)
+                          ..rotateX(0.05 * math.pi * _pulseController.value),
+                        alignment: Alignment.center,
+                        child: AnimatedBuilder(
+                          animation: _pulseController,
+                          builder: (context, child) {
+                            return Container(
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.green.withOpacity(
+                                        0.3 + _pulseController.value * 0.2),
+                                    blurRadius:
+                                        30 + (_pulseController.value * 20),
+                                    spreadRadius:
+                                        5 + (_pulseController.value * 5),
                                   ),
+                                  BoxShadow(
+                                    color: Colors.blue.withOpacity(
+                                        0.2 + _pulseController.value * 0.1),
+                                    blurRadius: 20,
+                                    spreadRadius: 2,
+                                  ),
+                                ],
+                              ),
+                              child: Hero(
+                                tag: 'app_logo',
+                                child: _buildGlassmorphicContainer(
+                                  child: Image.asset(
+                                    "assets/app_logo.png",
+                                    width: 100,
+                                    height: 100,
+                                  ),
+                                  borderRadius: 50,
                                 ),
                               ),
-                            ),
-                          );
-                        },
+                            );
+                          },
+                        ),
                       )
                           .animate()
                           .fade(duration: 1000.ms)
@@ -155,34 +189,40 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
                       SizedBox(height: 25),
 
-                      // Enhanced Title with 3D Effect
-                      Transform(
-                        transform: Matrix4.identity()
-                          ..setEntry(3, 2, 0.001)
-                          ..rotateX(0.01 * math.pi),
-                        alignment: Alignment.center,
-                        child: ShaderMask(
-                          shaderCallback: (bounds) => LinearGradient(
-                            colors: [
-                              Colors.white,
-                              Colors.green.shade300,
-                              Colors.blue.shade300,
-                              Colors.white,
-                            ],
-                            stops: [0.0, 0.3, 0.7, 1.0],
-                          ).createShader(bounds),
-                          child: Text(
-                            "Algerian Fantasy \n League",
-                            textAlign: TextAlign.center,
-                            style: GoogleFonts.poppins(
-                              fontSize: 24,
-                              fontWeight: FontWeight.bold,
-                              height: 1.2,
-                              letterSpacing: 1.2,
-                              color: Colors.white,
+                      // Enhanced Title with Animated Gradient
+                      AnimatedBuilder(
+                        animation: _shimmerController,
+                        builder: (context, child) {
+                          return ShaderMask(
+                            shaderCallback: (bounds) => LinearGradient(
+                              begin: Alignment(
+                                -1.0 + (2 * _shimmerController.value),
+                                0.0,
+                              ),
+                              end: Alignment(
+                                0.0 + (2 * _shimmerController.value),
+                                0.0,
+                              ),
+                              colors: [
+                                Colors.white.withOpacity(0.5),
+                                Colors.white,
+                                Colors.white.withOpacity(0.5),
+                              ],
+                              stops: [0.0, 0.5, 1.0],
+                            ).createShader(bounds),
+                            child: Text(
+                              "Algerian Fantasy\nLeague",
+                              textAlign: TextAlign.center,
+                              style: GoogleFonts.poppins(
+                                fontSize: 28,
+                                fontWeight: FontWeight.bold,
+                                height: 1.2,
+                                letterSpacing: 1.2,
+                                color: Colors.white,
+                              ),
                             ),
-                          ),
-                        ),
+                          );
+                        },
                       )
                           .animate()
                           .fade(duration: 1000.ms)
@@ -190,47 +230,56 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
                       SizedBox(height: 30),
 
-                      // Glass Morphism Tagline Card
+                      // Enhanced Tagline Card with Dynamic Gradient
                       Container(
                         margin: EdgeInsets.symmetric(horizontal: 15),
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(20),
-                          child: BackdropFilter(
-                            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                            child: Container(
-                              padding: EdgeInsets.symmetric(
-                                  horizontal: 25, vertical: 20),
-                              decoration: BoxDecoration(
-                                gradient: LinearGradient(
-                                  begin: Alignment.topLeft,
-                                  end: Alignment.bottomRight,
-                                  colors: [
-                                    Colors.white.withOpacity(0.2),
-                                    Colors.white.withOpacity(0.05),
-                                  ],
-                                ),
-                                border: Border.all(
-                                  color: Colors.white.withOpacity(0.2),
-                                ),
-                                borderRadius: BorderRadius.circular(20),
-                              ),
-                              child: Text(
-                                "🏆 Create your ultimate team, experience thrilling matches, and rise to legendary status!",
+                        child: _buildGlassmorphicContainer(
+                          child: AnimatedBuilder(
+                            animation: _shimmerController,
+                            builder: (context, child) {
+                              return RichText(
                                 textAlign: TextAlign.center,
-                                style: GoogleFonts.poppins(
-                                  fontSize: 18,
-                                  height: 1.6,
-                                  color: Colors.white.withOpacity(0.95),
-                                  shadows: [
-                                    Shadow(
-                                      color: Colors.black.withOpacity(0.3),
-                                      blurRadius: 5,
+                                text: TextSpan(
+                                  children: [
+                                    TextSpan(
+                                      text: "🏆 ",
+                                      style: TextStyle(fontSize: 24),
+                                    ),
+                                    TextSpan(
+                                      text: "Create your ultimate team,\n",
+                                      style: GoogleFonts.poppins(
+                                        fontSize: 17,
+                                        height: 1.6,
+                                        color: Colors.white.withOpacity(0.95),
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                    TextSpan(
+                                      text: "experience thrilling matches,\n",
+                                      style: GoogleFonts.poppins(
+                                        fontSize: 18,
+                                        height: 1.6,
+                                        color: Colors.white.withOpacity(0.95),
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                    TextSpan(
+                                      text: "and rise to legendary status!",
+                                      style: GoogleFonts.poppins(
+                                        fontSize: 18,
+                                        height: 1.6,
+                                        color: Colors.green.shade300,
+                                        fontWeight: FontWeight.w700,
+                                      ),
                                     ),
                                   ],
                                 ),
-                              ),
-                            ),
+                              );
+                            },
                           ),
+                          padding: EdgeInsets.symmetric(
+                              horizontal: 25, vertical: 20),
+                          borderRadius: 20,
                         ),
                       )
                           .animate()
@@ -239,25 +288,25 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
                       SizedBox(height: 40),
 
-                      // Ultra Modern Feature Cards
+                      // Enhanced Feature Cards with Interactive Hover
                       Padding(
                         padding: EdgeInsets.symmetric(horizontal: 20),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                           children: [
-                            _ultraModernFeatureCard(
+                            _buildEnhancedFeatureCard(
                               Icons.people_alt,
                               "Create Team",
                               [Colors.blue.shade400, Colors.blue.shade700],
                               delay: 0,
                             ),
-                            _ultraModernFeatureCard(
+                            _buildEnhancedFeatureCard(
                               Icons.sports_soccer,
-                              "Match Simulation",
+                              "Simulation",
                               [Colors.green.shade400, Colors.green.shade700],
                               delay: 200,
                             ),
-                            _ultraModernFeatureCard(
+                            _buildEnhancedFeatureCard(
                               Icons.leaderboard,
                               "Leaderboard",
                               [Colors.orange.shade400, Colors.orange.shade700],
@@ -269,79 +318,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
                       SizedBox(height: 40),
 
-                      // Floating Action Button
+                      // Enhanced Action Button with Animation
                       Container(
                         margin: EdgeInsets.symmetric(horizontal: 30),
-                        child: GestureDetector(
-                          onTapDown: (_) => _pulseController.stop(),
-                          onTapUp: (_) =>
-                              _pulseController.repeat(reverse: true),
-                          child: AnimatedBuilder(
-                            animation: _pulseController,
-                            builder: (context, child) {
-                              return Container(
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(30),
-                                  gradient: LinearGradient(
-                                    begin: Alignment.topLeft,
-                                    end: Alignment.bottomRight,
-                                    colors: [
-                                      Colors.green.shade400,
-                                      Colors.green.shade700,
-                                    ],
-                                  ),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Colors.green.withOpacity(
-                                          0.3 + _pulseController.value * 0.2),
-                                      blurRadius: 15,
-                                      spreadRadius: 2,
-                                    ),
-                                  ],
-                                ),
-                                child: Material(
-                                  color: Colors.transparent,
-                                  child: InkWell(
-                                    borderRadius: BorderRadius.circular(30),
-                                    onTap: () {
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                            builder: (context) =>
-                                                CreateNameScreen()),
-                                      );
-                                    },
-                                    child: Padding(
-                                      padding: EdgeInsets.symmetric(
-                                          horizontal: 30, vertical: 20),
-                                      child: Row(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.center,
-                                        children: [
-                                          Icon(
-                                            Icons.add_circle,
-                                            size: 28,
-                                            color: Colors.white,
-                                          ),
-                                          SizedBox(width: 12),
-                                          Text(
-                                            "Create Your Team",
-                                            style: GoogleFonts.poppins(
-                                              fontSize: 20,
-                                              fontWeight: FontWeight.bold,
-                                              color: Colors.white,
-                                              letterSpacing: 0.5,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              );
-                            },
-                          ),
-                        ),
+                        child: _buildEnhancedActionButton(),
                       )
                           .animate()
                           .fade(duration: 1000.ms, delay: 600.ms)
@@ -359,65 +339,225 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     );
   }
 
-  Widget _ultraModernFeatureCard(
-      IconData icon, String label, List<Color> gradientColors,
-      {required int delay}) {
-    return Container(
-      width: 100,
-      child: Column(
-        children: [
-          AnimatedBuilder(
+  Widget _buildGlassmorphicContainer({
+    required Widget child,
+    required double borderRadius,
+    EdgeInsetsGeometry padding = const EdgeInsets.all(15),
+  }) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(borderRadius),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: Container(
+          padding: padding,
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                Colors.white.withOpacity(0.2),
+                Colors.white.withOpacity(0.05),
+              ],
+            ),
+            border: Border.all(
+              color: Colors.white.withOpacity(0.2),
+            ),
+            borderRadius: BorderRadius.circular(borderRadius),
+          ),
+          child: child,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEnhancedFeatureCard(
+    IconData icon,
+    String label,
+    List<Color> gradientColors, {
+    required int delay,
+  }) {
+    return StatefulBuilder(
+      builder: (context, setState) {
+        return MouseRegion(
+          onEnter: (_) => setState(() {}),
+          onExit: (_) => setState(() {}),
+          child: Container(
+            width: 100,
+            child: Column(
+              children: [
+                AnimatedBuilder(
+                  animation: _pulseController,
+                  builder: (context, child) {
+                    return Container(
+                      padding: EdgeInsets.all(18),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(25),
+                        gradient: LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: gradientColors
+                              .map((c) => c.withOpacity(0.8))
+                              .toList(),
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: gradientColors[0].withOpacity(
+                                0.3 + _pulseController.value * 0.2),
+                            blurRadius: 15,
+                            spreadRadius: 2,
+                          ),
+                        ],
+                        border: Border.all(
+                          color: Colors.white.withOpacity(0.2),
+                          width: 1.5,
+                        ),
+                      ),
+                      child: Icon(
+                        icon,
+                        size: 35,
+                        color: Colors.white,
+                      ),
+                    );
+                  },
+                ),
+                SizedBox(height: 12),
+                Text(
+                  label,
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.poppins(
+                    color: Colors.white.withOpacity(0.9),
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        )
+            .animate()
+            .fade(duration: 800.ms, delay: Duration(milliseconds: delay))
+            .slideY(
+                begin: 0.3,
+                duration: 600.ms,
+                delay: Duration(milliseconds: delay))
+            .scale(delay: Duration(milliseconds: delay), duration: 600.ms);
+      },
+    );
+  }
+
+  Widget _buildEnhancedActionButton() {
+    return StatefulBuilder(
+      builder: (context, setState) {
+        return GestureDetector(
+          onTapDown: (_) => _pulseController.stop(),
+          onTapUp: (_) => _pulseController.repeat(reverse: true),
+          child: AnimatedBuilder(
             animation: _pulseController,
             builder: (context, child) {
               return Container(
-                padding: EdgeInsets.all(18),
                 decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(25),
+                  borderRadius: BorderRadius.circular(30),
                   gradient: LinearGradient(
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
-                    colors:
-                        gradientColors.map((c) => c.withOpacity(0.8)).toList(),
+                    colors: [
+                      Colors.green.shade400,
+                      Colors.green.shade700,
+                    ],
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: gradientColors[0]
+                      color: Colors.green
                           .withOpacity(0.3 + _pulseController.value * 0.2),
                       blurRadius: 15,
                       spreadRadius: 2,
                     ),
                   ],
-                  border: Border.all(
-                    color: Colors.white.withOpacity(0.2),
-                    width: 1.5,
-                  ),
                 ),
-                child: Icon(
-                  icon,
-                  size: 35,
-                  color: Colors.white,
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(30),
+                    onTap: () {
+                      // Add button press animation
+                      HapticFeedback.mediumImpact();
+                      Navigator.push(
+                        context,
+                        PageRouteBuilder(
+                          pageBuilder:
+                              (context, animation, secondaryAnimation) =>
+                                  CreateNameScreen(),
+                          transitionsBuilder:
+                              (context, animation, secondaryAnimation, child) {
+                            var begin = Offset(1.0, 0.0);
+                            var end = Offset.zero;
+                            var curve = Curves.easeInOutCubic;
+                            var tween = Tween(begin: begin, end: end)
+                                .chain(CurveTween(curve: curve));
+                            return SlideTransition(
+                              position: animation.drive(tween),
+                              child: child,
+                            );
+                          },
+                        ),
+                      );
+                    },
+                    child: Padding(
+                      padding:
+                          EdgeInsets.symmetric(horizontal: 30, vertical: 20),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          // Animated Icon
+                          AnimatedBuilder(
+                            animation: _shimmerController,
+                            builder: (context, child) {
+                              return Transform.rotate(
+                                angle: _shimmerController.value * 2 * math.pi,
+                                child: Icon(
+                                  Icons.add_circle,
+                                  size: 28,
+                                  color: Colors.white,
+                                ),
+                              );
+                            },
+                          ),
+                          SizedBox(width: 12),
+                          // Animated Text
+                          ShaderMask(
+                            shaderCallback: (bounds) => LinearGradient(
+                              begin: Alignment(
+                                  -1.0 + (2 * _shimmerController.value), 0.0),
+                              end: Alignment(
+                                  0.0 + (2 * _shimmerController.value), 0.0),
+                              colors: [
+                                Colors.white.withOpacity(0.8),
+                                Colors.white,
+                                Colors.white.withOpacity(0.8),
+                              ],
+                              stops: [0.0, 0.5, 1.0],
+                            ).createShader(bounds),
+                            child: Text(
+                              "Create Your Team",
+                              style: GoogleFonts.poppins(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                                letterSpacing: 0.5,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
                 ),
               );
             },
           ),
-          SizedBox(height: 12),
-          Text(
-            label,
-            textAlign: TextAlign.center,
-            style: GoogleFonts.poppins(
-              color: Colors.white.withOpacity(0.9),
-              fontSize: 15,
-              fontWeight: FontWeight.w500,
-              letterSpacing: 0.5,
-            ),
-          ),
-        ],
-      ),
-    )
-        .animate()
-        .fade(duration: 800.ms, delay: Duration(milliseconds: delay))
-        .slideY(
-            begin: 0.3, duration: 600.ms, delay: Duration(milliseconds: delay))
-        .scale(delay: Duration(milliseconds: delay), duration: 600.ms);
+        );
+      },
+    );
   }
 }

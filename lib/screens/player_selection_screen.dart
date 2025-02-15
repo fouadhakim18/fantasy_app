@@ -13,6 +13,8 @@ import 'simulation_screen.dart';
 
 // ------------------- CreateTeamScreen -------------------
 class CreateTeamScreen extends StatefulWidget {
+  final Map<String, List<Player?>>? preselectedPlayers;
+  CreateTeamScreen({this.preselectedPlayers});
   @override
   _CreateTeamScreenState createState() => _CreateTeamScreenState();
 }
@@ -36,13 +38,30 @@ class _CreateTeamScreenState extends State<CreateTeamScreen> {
   }
 
   void _initializeSelectedPlayers() {
-    final req = formationRequirements[selectedFormation]!;
-    selectedPlayers = {
-      "GK": List<Player?>.filled(req["GK"]!, null),
-      "DF": List<Player?>.filled(req["DF"]!, null),
-      "MF": List<Player?>.filled(req["MF"]!, null),
-      "FW": List<Player?>.filled(req["FW"]!, null),
-    };
+    if (widget.preselectedPlayers != null) {
+      selectedPlayers = widget.preselectedPlayers!;
+      remainingBudget = totalBudget - _calculateCurrentSpending();
+    } else {
+      final req = formationRequirements[selectedFormation]!;
+      selectedPlayers = {
+        "GK": List<Player?>.filled(req["GK"]!, null),
+        "DF": List<Player?>.filled(req["DF"]!, null),
+        "MF": List<Player?>.filled(req["MF"]!, null),
+        "FW": List<Player?>.filled(req["FW"]!, null),
+      };
+    }
+  }
+
+  double _calculateCurrentSpending() {
+    double spending = 0;
+    selectedPlayers.forEach((position, players) {
+      for (var player in players) {
+        if (player != null) {
+          spending += player.price;
+        }
+      }
+    });
+    return spending;
   }
 
   void _updateFormation(String newFormation) {

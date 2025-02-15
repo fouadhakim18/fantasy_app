@@ -1,3 +1,4 @@
+import 'package:fantasy_app/screens/home.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'models/player.dart';

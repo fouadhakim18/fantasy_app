@@ -35,4 +35,8 @@ class Player {
       points += 4;
     }
   }
+
+  void resetPoints() {
+    points = 0;
+  }
 }

@@ -216,10 +216,10 @@ class _CreateNameScreenState extends State<CreateNameScreen>
                           style: GoogleFonts.poppins(
                             fontSize: 32,
                             fontWeight: FontWeight.bold,
-                            foreground: Paint()
-                              ..style = PaintingStyle.stroke
-                              ..strokeWidth = 8
-                              ..color = Colors.green.withOpacity(0.1),
+                            // foreground: Paint()
+                            //   ..style = PaintingStyle.stroke
+                            //   ..strokeWidth = 8
+                            //   ..color = Colors.green.withOpacity(0.1),
                           ),
                           textAlign: TextAlign.center,
                         ),
